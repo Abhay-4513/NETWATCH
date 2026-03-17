@@ -2,3 +2,4 @@ flask
 dnslib
 requests
 python-dotenv
+scapy
