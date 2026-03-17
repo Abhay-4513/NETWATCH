@@ -1,1 +1,1 @@
-for local documentation and installation reffer documentation pdf
+for documentation and installation reffer documentation pdf
