@@ -25,7 +25,6 @@ Netwatch is a Python-based network monitoring and DNS filtering system with a re
 ```bash
 netwatch/
 ├── app.py
-├── netwatch.db
 ├── requirements.txt
 ├── templates/
 │   └── dashboard.html
