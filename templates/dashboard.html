@@ -1,0 +1,1260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NetWatch — Network Monitor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg: #0a0c0f;
+    --surface: #11141a;
+    --surface2: #181c24;
+    --border: #1e2530;
+    --border2: #252d3a;
+    --text: #e4eaf5;
+    --muted: #5a6780;
+    --accent: #00e5a0;
+    --accent2: #0076ff;
+    --danger: #ff4060;
+    --warning: #ffb020;
+    --info: #40b4ff;
+    --mono: 'Space Mono', monospace;
+    --sans: 'DM Sans', sans-serif;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Scanline overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0,229,160,0.012) 2px,
+      rgba(0,229,160,0.012) 4px
+    );
+    pointer-events: none;
+    z-index: 1000;
+  }
+
+  /* Header */
+  .header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 28px;
+    height: 58px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .logo-icon {
+    width: 32px;
+    height: 32px;
+    background: var(--accent);
+    clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+  }
+
+  .logo-icon::after {
+    content: '⬡';
+    font-size: 20px;
+    color: var(--bg);
+    position: absolute;
+  }
+
+  .logo-text {
+    font-family: var(--mono);
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    color: var(--text);
+  }
+
+  .logo-text span { color: var(--accent); }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+
+  .live-badge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 1px;
+    color: var(--accent);
+  }
+
+  .live-dot {
+    width: 8px;
+    height: 8px;
+    background: var(--accent);
+    border-radius: 50%;
+    animation: pulse 1.5s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(0.8); }
+  }
+
+  /* Nav */
+  .nav {
+    display: flex;
+    gap: 4px;
+  }
+
+  .nav-btn {
+    background: none;
+    border: 1px solid transparent;
+    color: var(--muted);
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 1px;
+    padding: 6px 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-transform: uppercase;
+  }
+
+  .nav-btn:hover { color: var(--text); border-color: var(--border2); }
+  .nav-btn.active { color: var(--accent); border-color: var(--accent); background: rgba(0,229,160,0.06); }
+
+  /* Main layout */
+  .main { padding: 24px 28px; max-width: 1600px; margin: 0 auto; }
+
+  /* Pages */
+  .page { display: none; }
+  .page.active { display: block; }
+
+  /* Stat cards */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.2s;
+  }
+
+  .stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 3px;
+    height: 100%;
+    background: var(--accent);
+  }
+
+  .stat-card.danger::before { background: var(--danger); }
+  .stat-card.info::before { background: var(--info); }
+  .stat-card.warning::before { background: var(--warning); }
+  .stat-card.accent2::before { background: var(--accent2); }
+
+  .stat-label {
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-family: var(--mono);
+    margin-bottom: 10px;
+  }
+
+  .stat-value {
+    font-family: var(--mono);
+    font-size: 32px;
+    font-weight: 700;
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+
+  .stat-card.danger .stat-value { color: var(--danger); }
+  .stat-card.info .stat-value { color: var(--info); }
+  .stat-card.warning .stat-value { color: var(--warning); }
+  .stat-card.accent2 .stat-value { color: var(--accent2); }
+
+  .stat-sub {
+    font-size: 11px;
+    color: var(--muted);
+  }
+
+  /* Grid layouts */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+  .grid-60-40 { display: grid; grid-template-columns: 1.5fr 1fr; gap: 16px; margin-bottom: 16px; }
+
+  /* Panel */
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 20px;
+  }
+
+  .panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .panel-title {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+
+  .panel-actions { display: flex; gap: 8px; align-items: center; }
+
+  /* Live feed */
+  .live-feed {
+    height: 320px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border2) transparent;
+  }
+
+  .feed-item {
+    display: grid;
+    grid-template-columns: 140px 130px 1fr 80px 80px;
+    gap: 12px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+    font-family: var(--mono);
+    font-size: 11px;
+    align-items: center;
+    animation: slideIn 0.3s ease;
+  }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateX(-8px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+
+  .feed-item:last-child { border-bottom: none; }
+  .feed-ip { color: var(--info); }
+  .feed-mac { color: var(--muted); }
+  .feed-domain { color: var(--text); }
+  .feed-cat { color: var(--muted); font-size: 10px; }
+  
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    font-size: 9px;
+    font-family: var(--mono);
+    letter-spacing: 1px;
+    font-weight: 700;
+    text-transform: uppercase;
+  }
+
+  .badge-allowed { background: rgba(0,229,160,0.12); color: var(--accent); }
+  .badge-blocked { background: rgba(255,64,96,0.15); color: var(--danger); }
+  .badge-social { background: rgba(0,118,255,0.12); color: var(--accent2); }
+  .badge-media { background: rgba(255,176,32,0.12); color: var(--warning); }
+  .badge-adult { background: rgba(255,64,96,0.12); color: var(--danger); }
+  .badge-gambling { background: rgba(255,64,96,0.12); color: var(--danger); }
+  .badge-malware { background: rgba(255,64,96,0.2); color: var(--danger); }
+
+  /* Devices table */
+  .data-table { width: 100%; border-collapse: collapse; }
+  
+  .data-table th {
+    text-align: left;
+    padding: 8px 12px;
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+    border-bottom: 1px solid var(--border2);
+  }
+
+  .data-table td {
+    padding: 10px 12px;
+    font-size: 12px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .data-table tr:hover td { background: var(--surface2); }
+  .data-table tr:last-child td { border-bottom: none; }
+
+  .device-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-right: 8px;
+  }
+
+  .device-dot.online { background: var(--accent); box-shadow: 0 0 6px var(--accent); }
+  .device-dot.offline { background: var(--muted); }
+
+  /* Domain bar chart */
+  .domain-bar { display: flex; flex-direction: column; gap: 8px; }
+
+  .domain-row { display: flex; align-items: center; gap: 10px; }
+  
+  .domain-name {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text);
+    width: 160px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex-shrink: 0;
+  }
+
+  .domain-bar-track {
+    flex: 1;
+    height: 4px;
+    background: var(--border2);
+    position: relative;
+  }
+
+  .domain-bar-fill {
+    height: 100%;
+    background: var(--accent);
+    transition: width 0.6s ease;
+  }
+
+  .domain-bar-fill.blocked { background: var(--danger); }
+
+  .domain-count {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--muted);
+    width: 40px;
+    text-align: right;
+  }
+
+  /* Blocklist */
+  .blocklist { max-height: 400px; overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--border2) transparent; }
+
+  .block-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+  }
+
+  .block-item:last-child { border-bottom: none; }
+  .block-domain { font-family: var(--mono); color: var(--danger); }
+  .block-actions { display: flex; gap: 8px; }
+
+  /* Buttons */
+  .btn {
+    border: 1px solid var(--border2);
+    background: transparent;
+    color: var(--text);
+    padding: 6px 14px;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-transform: uppercase;
+  }
+
+  .btn:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-danger { border-color: rgba(255,64,96,0.4); color: var(--danger); }
+  .btn-danger:hover { background: rgba(255,64,96,0.1); }
+  .btn-primary { border-color: var(--accent); color: var(--accent); background: rgba(0,229,160,0.06); }
+  .btn-primary:hover { background: rgba(0,229,160,0.12); }
+
+  /* Input */
+  .input-row { display: flex; gap: 8px; margin-bottom: 16px; }
+  
+  .input {
+    flex: 1;
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    color: var(--text);
+    padding: 8px 14px;
+    font-family: var(--mono);
+    font-size: 12px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .input:focus { border-color: var(--accent); }
+  .input::placeholder { color: var(--muted); }
+
+  select.input {
+    cursor: pointer;
+  }
+
+  /* Settings */
+  .settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  
+  .setting-group {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    padding: 20px;
+  }
+
+  .setting-title {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 16px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .setting-row { margin-bottom: 12px; }
+  
+  .setting-label {
+    font-size: 11px;
+    color: var(--muted);
+    margin-bottom: 5px;
+    font-family: var(--mono);
+    letter-spacing: 1px;
+  }
+
+  /* Toggle switch */
+  .toggle { position: relative; display: inline-block; width: 40px; height: 20px; }
+  .toggle input { opacity: 0; width: 0; height: 0; }
+  
+  .slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: var(--border2);
+    transition: 0.3s;
+  }
+
+  .slider::before {
+    content: '';
+    position: absolute;
+    height: 14px;
+    width: 14px;
+    left: 3px;
+    bottom: 3px;
+    background: var(--muted);
+    transition: 0.3s;
+  }
+
+  input:checked + .slider { background: rgba(0,229,160,0.3); }
+  input:checked + .slider::before { background: var(--accent); transform: translateX(20px); }
+
+  /* Alert notification */
+  .alert-toast {
+    position: fixed;
+    top: 70px;
+    right: 24px;
+    background: var(--surface2);
+    border: 1px solid var(--danger);
+    border-left: 4px solid var(--danger);
+    padding: 14px 20px;
+    max-width: 360px;
+    z-index: 9999;
+    animation: toastIn 0.3s ease;
+    display: none;
+  }
+
+  @keyframes toastIn {
+    from { opacity: 0; transform: translateX(20px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+
+  .toast-title {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--danger);
+    letter-spacing: 1px;
+    margin-bottom: 4px;
+  }
+
+  .toast-body { font-size: 12px; color: var(--text); }
+
+  /* Logs page */
+  .log-filters {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+  }
+
+  .log-table-wrap { max-height: 600px; overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--border2) transparent; }
+
+  .export-btn {
+    text-decoration: none;
+    color: inherit;
+  }
+
+  /* Simulate widget */
+  .simulate-row {
+    display: grid;
+    grid-template-columns: 2fr 1.5fr 1fr;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+
+  /* Chart canvas */
+  canvas { max-height: 200px; }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+  /* Responsive */
+  @media (max-width: 1200px) {
+    .stats-grid { grid-template-columns: repeat(3, 1fr); }
+    .grid-3 { grid-template-columns: 1fr 1fr; }
+  }
+  @media (max-width: 768px) {
+    .stats-grid { grid-template-columns: 1fr 1fr; }
+    .grid-2, .grid-3, .grid-60-40 { grid-template-columns: 1fr; }
+    .main { padding: 16px; }
+    .feed-item { grid-template-columns: 100px 1fr 70px; }
+    .feed-mac { display: none; }
+    .feed-cat { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="logo">
+    <div class="logo-icon"></div>
+    <span class="logo-text">NET<span>WATCH</span></span>
+  </div>
+  <nav class="nav">
+    <button class="nav-btn active" onclick="showPage('dashboard')">Dashboard</button>
+    <button class="nav-btn" onclick="showPage('devices')">Devices</button>
+    <button class="nav-btn" onclick="showPage('logs')">Logs</button>
+    <button class="nav-btn" onclick="showPage('blocklist')">Blocklist</button>
+    <button class="nav-btn" onclick="showPage('settings')">Settings</button>
+  </nav>
+  <div class="header-right">
+    <div class="live-badge"><div class="live-dot"></div>LIVE</div>
+    <button class="btn btn-primary" onclick="exportLogs()">⬇ Export CSV</button>
+  </div>
+</header>
+
+<!-- Toast alert -->
+<div class="alert-toast" id="alertToast">
+  <div class="toast-title">⛔ BLOCKED DOMAIN DETECTED</div>
+  <div class="toast-body" id="toastBody"></div>
+</div>
+
+<main class="main">
+
+  <!-- ── DASHBOARD PAGE ── -->
+  <div class="page active" id="page-dashboard">
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-label">Requests Today</div>
+        <div class="stat-value" id="stat-total">—</div>
+        <div class="stat-sub">DNS queries processed</div>
+      </div>
+      <div class="stat-card danger">
+        <div class="stat-label">Blocked Today</div>
+        <div class="stat-value" id="stat-blocked">—</div>
+        <div class="stat-sub" id="stat-block-rate">—% block rate</div>
+      </div>
+      <div class="stat-card info">
+        <div class="stat-label">Active Devices</div>
+        <div class="stat-value" id="stat-active">—</div>
+        <div class="stat-sub">in last 30 minutes</div>
+      </div>
+      <div class="stat-card accent2">
+        <div class="stat-label">Known Devices</div>
+        <div class="stat-value" id="stat-devices">—</div>
+        <div class="stat-sub">on this network</div>
+      </div>
+      <div class="stat-card warning">
+        <div class="stat-label">Block Rules</div>
+        <div class="stat-value" id="stat-rules">—</div>
+        <div class="stat-sub">active domain rules</div>
+      </div>
+    </div>
+
+    <div class="grid-60-40">
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">Activity Timeline — Last 24h</span>
+        </div>
+        <canvas id="timelineChart"></canvas>
+      </div>
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">Traffic by Category</span>
+        </div>
+        <canvas id="categoryChart"></canvas>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">Live DNS Feed</span>
+          <span class="live-badge"><div class="live-dot"></div>REAL-TIME</span>
+        </div>
+        <div class="live-feed" id="liveFeed">
+          <div style="color:var(--muted);font-family:var(--mono);font-size:11px;text-align:center;padding:40px 0;">
+            Waiting for DNS events...
+          </div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">Top Domains — 24h</span>
+        </div>
+        <div class="domain-bar" id="topDomains"></div>
+      </div>
+    </div>
+
+    <!-- Simulate panel -->
+    <div class="panel" style="margin-top:0">
+      <div class="panel-header">
+        <span class="panel-title">Simulate DNS Request (Testing)</span>
+      </div>
+      <div class="simulate-row">
+        <input class="input" id="simDomain" placeholder="Domain (e.g. pornhub.com)" />
+        <input class="input" id="simIP" placeholder="Device IP (e.g. 192.168.1.50)" value="192.168.1.50" />
+        <button class="btn btn-primary" onclick="simulateRequest()">⚡ Simulate</button>
+      </div>
+      <div id="simResult" style="font-family:var(--mono);font-size:12px;color:var(--muted)"></div>
+    </div>
+  </div>
+
+  <!-- ── DEVICES PAGE ── -->
+  <div class="page" id="page-devices">
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title">Connected Devices</span>
+        <button class="btn" onclick="loadDevices()">↺ Refresh</button>
+      </div>
+      <div style="overflow-x:auto;">
+        <table class="data-table" id="devicesTable">
+          <thead>
+            <tr>
+              <th>Status</th>
+              <th>Device Name</th>
+              <th>IP Address</th>
+              <th>MAC Address</th>
+              <th>Type</th>
+              <th>Vendor</th>
+              <th>Requests</th>
+              <th>Blocked</th>
+              <th>Last Seen</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="devicesBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── LOGS PAGE ── -->
+  <div class="page" id="page-logs">
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title">Access Logs</span>
+        <div class="panel-actions">
+          <select class="input" id="logHours" style="width:140px" onchange="loadLogs()">
+            <option value="1">Last 1 hour</option>
+            <option value="6">Last 6 hours</option>
+            <option value="24" selected>Last 24 hours</option>
+            <option value="48">Last 48 hours</option>
+          </select>
+          <select class="input" id="logStatus" style="width:120px" onchange="loadLogs()">
+            <option value="">All</option>
+            <option value="ALLOWED">Allowed</option>
+            <option value="BLOCKED">Blocked</option>
+          </select>
+          <button class="btn btn-primary" onclick="exportLogs()">⬇ CSV</button>
+        </div>
+      </div>
+      <div class="log-table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Timestamp</th>
+              <th>Device IP</th>
+              <th>MAC</th>
+              <th>Device</th>
+              <th>Domain</th>
+              <th>Category</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="logsBody"></tbody>
+        </table>
+      </div>
+      <div style="padding:12px 0;font-family:var(--mono);font-size:11px;color:var(--muted)" id="logCount"></div>
+    </div>
+  </div>
+
+  <!-- ── BLOCKLIST PAGE ── -->
+  <div class="page" id="page-blocklist">
+    <div class="panel" style="margin-bottom:16px">
+      <div class="panel-header">
+        <span class="panel-title">Add Block Rule</span>
+      </div>
+      <div class="input-row">
+        <input class="input" id="newDomain" placeholder="Domain to block (e.g. gambling-site.com)" />
+        <select class="input" id="newCategory" style="width:160px">
+          <option value="custom">Custom</option>
+          <option value="adult">Adult</option>
+          <option value="gambling">Gambling</option>
+          <option value="malware">Malware</option>
+          <option value="social">Social</option>
+          <option value="ads">Ads/Tracking</option>
+        </select>
+        <input class="input" id="newReason" placeholder="Reason (optional)" />
+        <button class="btn btn-primary" onclick="addBlockedDomain()">+ Add Rule</button>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title">Active Block Rules</span>
+        <span id="blocklistCount" style="font-family:var(--mono);font-size:11px;color:var(--muted)"></span>
+      </div>
+      <div class="blocklist" id="blocklistItems"></div>
+    </div>
+  </div>
+
+  <!-- ── SETTINGS PAGE ── -->
+  <div class="page" id="page-settings">
+    <div class="settings-grid">
+      <div class="setting-group">
+        <div class="setting-title">Telegram Alerts</div>
+        <div class="setting-row">
+          <div class="setting-label">Enable Telegram Alerts</div>
+          <label class="toggle">
+            <input type="checkbox" id="s-alert_telegram" onchange="saveSettings()">
+            <span class="slider"></span>
+          </label>
+        </div>
+        <div class="setting-row">
+          <div class="setting-label">Bot Token</div>
+          <input class="input" id="s-telegram_token" placeholder="1234567890:ABCdef..." onblur="saveSettings()" />
+        </div>
+        <div class="setting-row">
+          <div class="setting-label">Chat ID</div>
+          <input class="input" id="s-telegram_chat_id" placeholder="-1001234567890" onblur="saveSettings()" />
+        </div>
+        <div style="font-size:11px;color:var(--muted);line-height:1.6;margin-top:12px;">
+          Get your token from @BotFather on Telegram.<br>
+          Get your chat ID by messaging @userinfobot.
+        </div>
+      </div>
+
+      <div class="setting-group">
+        <div class="setting-title">Email Alerts</div>
+        <div class="setting-row">
+          <div class="setting-label">Enable Email Alerts</div>
+          <label class="toggle">
+            <input type="checkbox" id="s-alert_email" onchange="saveSettings()">
+            <span class="slider"></span>
+          </label>
+        </div>
+        <div class="setting-row">
+          <div class="setting-label">SMTP Server</div>
+          <input class="input" id="s-email_smtp" placeholder="smtp.gmail.com" onblur="saveSettings()" />
+        </div>
+        <div class="setting-row">
+          <div class="setting-label">Email Address</div>
+          <input class="input" id="s-email_user" placeholder="admin@example.com" onblur="saveSettings()" />
+        </div>
+        <div class="setting-row">
+          <div class="setting-label">App Password</div>
+          <input class="input" type="password" id="s-email_password" placeholder="Gmail app password" onblur="saveSettings()" />
+        </div>
+        <div class="setting-row">
+          <div class="setting-label">Alert Recipient</div>
+          <input class="input" id="s-email_to" placeholder="recipient@example.com" onblur="saveSettings()" />
+        </div>
+      </div>
+
+      <div class="setting-group">
+        <div class="setting-title">Monitoring Settings</div>
+        <div class="setting-row">
+          <div class="setting-label">Network Interface</div>
+          <input class="input" id="s-dns_interface" placeholder="eth0 / wlan0 / all" onblur="saveSettings()" />
+        </div>
+        <div class="setting-row">
+          <div class="setting-label">Log Retention (days)</div>
+          <input class="input" id="s-log_retention_days" placeholder="30" type="number" onblur="saveSettings()" />
+        </div>
+        <div class="setting-row">
+          <div class="setting-label">Alert Threshold (repeats before re-alert)</div>
+          <input class="input" id="s-alert_threshold" placeholder="5" type="number" onblur="saveSettings()" />
+        </div>
+      </div>
+
+      <div class="setting-group">
+        <div class="setting-title">System Info</div>
+        <div style="font-family:var(--mono);font-size:11px;line-height:2;color:var(--muted)">
+          <div>Version: <span style="color:var(--text)">NetWatch 1.0</span></div>
+          <div>Database: <span style="color:var(--text)">SQLite (netwatch.db)</span></div>
+          <div>Backend: <span style="color:var(--text)">Python / Flask</span></div>
+          <div>Transport: <span style="color:var(--text)">WebSocket + REST API</span></div>
+          <br>
+          <div style="font-size:10px;color:var(--muted);line-height:1.8;">
+            🔒 Privacy Notice: This system only monitors<br>
+            network-level DNS queries. No content inspection,<br>
+            no location tracking. For authorized use only.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<script>
+// ── State ──────────────────────────────────────────────────────────────────
+let timelineChart = null;
+let categoryChart = null;
+const maxFeedItems = 60;
+let feedItems = [];
+
+// ── Page Navigation ─────────────────────────────────────────────────────────
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  event.target.classList.add('active');
+  if (name === 'dashboard') { loadStats(); loadTopDomains(); loadTimeline(); loadCategories(); }
+  else if (name === 'devices') loadDevices();
+  else if (name === 'logs') loadLogs();
+  else if (name === 'blocklist') loadBlocklist();
+  else if (name === 'settings') loadSettings();
+}
+
+// ── API helpers ─────────────────────────────────────────────────────────────
+async function api(path) {
+  const r = await fetch(path);
+  return r.json();
+}
+
+async function apiPost(path, data) {
+  const r = await fetch(path, {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(data)
+  });
+  return r.json();
+}
+
+function fmtTime(ts) {
+  if (!ts) return '—';
+  const d = new Date(ts.replace(' ', 'T'));
+  return d.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit', second: '2-digit'});
+}
+
+function fmtDate(ts) {
+  if (!ts) return '—';
+  const d = new Date(ts.replace(' ', 'T'));
+  return d.toLocaleString([], {month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'});
+}
+
+function catBadge(cat) {
+  const c = cat?.toLowerCase() || 'other';
+  const map = {adult:'adult', gambling:'gambling', malware:'malware', social:'social', media:'media'};
+  const cls = map[c] || '';
+  return `<span class="badge ${cls ? 'badge-'+cls : ''}" style="${!cls?'color:var(--muted)':''}">${c}</span>`;
+}
+
+// ── Stats ───────────────────────────────────────────────────────────────────
+async function loadStats() {
+  const d = await api('/api/stats');
+  document.getElementById('stat-total').textContent = d.total_today.toLocaleString();
+  document.getElementById('stat-blocked').textContent = d.blocked_today.toLocaleString();
+  document.getElementById('stat-active').textContent = d.active_devices;
+  document.getElementById('stat-devices').textContent = d.total_devices;
+  document.getElementById('stat-rules').textContent = d.blocked_domains_count;
+  document.getElementById('stat-block-rate').textContent = `${d.block_rate}% block rate`;
+}
+
+// ── Timeline Chart ───────────────────────────────────────────────────────────
+async function loadTimeline() {
+  const data = await api('/api/timeline?hours=24');
+  const labels = data.map(d => {
+    const h = d.hour.split(' ')[1];
+    return h ? h.slice(0, 5) : d.hour;
+  });
+  
+  if (timelineChart) timelineChart.destroy();
+  const ctx = document.getElementById('timelineChart').getContext('2d');
+  timelineChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        {
+          label: 'Allowed',
+          data: data.map(d => d.total - d.blocked),
+          borderColor: '#00e5a0',
+          backgroundColor: 'rgba(0,229,160,0.08)',
+          borderWidth: 2,
+          pointRadius: 0,
+          fill: true,
+          tension: 0.4
+        },
+        {
+          label: 'Blocked',
+          data: data.map(d => d.blocked),
+          borderColor: '#ff4060',
+          backgroundColor: 'rgba(255,64,96,0.08)',
+          borderWidth: 2,
+          pointRadius: 0,
+          fill: true,
+          tension: 0.4
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: true,
+      plugins: { legend: { labels: { color: '#5a6780', font: { family: 'Space Mono', size: 10 } } } },
+      scales: {
+        x: { grid: { color: '#1e2530' }, ticks: { color: '#5a6780', font: { family: 'Space Mono', size: 9 }, maxTicksLimit: 8 } },
+        y: { grid: { color: '#1e2530' }, ticks: { color: '#5a6780', font: { family: 'Space Mono', size: 9 } } }
+      }
+    }
+  });
+}
+
+// ── Category Donut Chart ─────────────────────────────────────────────────────
+async function loadCategories() {
+  const data = await api('/api/categories');
+  const COLORS = ['#00e5a0','#0076ff','#ffb020','#ff4060','#40b4ff','#a855f7','#f97316','#84cc16'];
+  
+  if (categoryChart) categoryChart.destroy();
+  const ctx = document.getElementById('categoryChart').getContext('2d');
+  categoryChart = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: data.map(d => d.category),
+      datasets: [{
+        data: data.map(d => d.count),
+        backgroundColor: COLORS.slice(0, data.length),
+        borderColor: '#11141a',
+        borderWidth: 2
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: true,
+      plugins: {
+        legend: {
+          position: 'right',
+          labels: { color: '#5a6780', font: { family: 'Space Mono', size: 9 }, boxWidth: 10, padding: 8 }
+        }
+      }
+    }
+  });
+}
+
+// ── Top Domains ───────────────────────────────────────────────────────────────
+async function loadTopDomains() {
+  const data = await api('/api/top-domains?hours=24&limit=12');
+  const max = data[0]?.total || 1;
+  const el = document.getElementById('topDomains');
+  el.innerHTML = data.map(d => `
+    <div class="domain-row">
+      <div class="domain-name">${d.domain}</div>
+      <div class="domain-bar-track">
+        <div class="domain-bar-fill ${d.blocked > d.allowed ? 'blocked' : ''}" 
+             style="width:${(d.total/max*100)}%"></div>
+      </div>
+      <div class="domain-count">${d.total}</div>
+    </div>
+  `).join('');
+}
+
+// ── Live Feed ─────────────────────────────────────────────────────────────────
+function addFeedItem(e) {
+  const el = document.getElementById('liveFeed');
+  const ts = new Date(e.timestamp).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit', second:'2-digit'});
+  
+  const item = document.createElement('div');
+  item.className = 'feed-item';
+  item.innerHTML = `
+    <span class="feed-ip">${e.device_ip}</span>
+    <span class="feed-mac">${e.device_mac}</span>
+    <span class="feed-domain">${e.domain}</span>
+    <span class="feed-cat">${catBadge(e.category)}</span>
+    <span><span class="badge badge-${e.status.toLowerCase()}">${e.status}</span></span>
+  `;
+  
+  // Clear placeholder
+  if (el.querySelector('[style]')) el.innerHTML = '';
+  
+  el.insertBefore(item, el.firstChild);
+  
+  // Trim feed
+  while (el.children.length > maxFeedItems) el.removeChild(el.lastChild);
+  
+  // Show toast for blocked
+  if (e.status === 'BLOCKED') showToast(e);
+}
+
+// ── Toast ─────────────────────────────────────────────────────────────────────
+let toastTimer = null;
+function showToast(e) {
+  const toast = document.getElementById('alertToast');
+  document.getElementById('toastBody').textContent = 
+    `${e.domain} • ${e.device_ip} • ${e.category || 'unknown'}`;
+  toast.style.display = 'block';
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toast.style.display = 'none', 5000);
+}
+
+// ── Devices ───────────────────────────────────────────────────────────────────
+async function loadDevices() {
+  const devices = await api('/api/devices');
+  const tbody = document.getElementById('devicesBody');
+  tbody.innerHTML = devices.map(d => {
+    const isOnline = d.last_seen && (Date.now() - new Date(d.last_seen.replace(' ','T')) < 30 * 60000);
+    return `<tr>
+      <td><span class="device-dot ${isOnline ? 'online' : 'offline'}"></span>${isOnline ? 'Online' : 'Offline'}</td>
+      <td><b>${d.device_name || d.hostname || 'Unknown'}</b></td>
+      <td style="font-family:var(--mono);font-size:11px;color:var(--info)">${d.ip_address || '—'}</td>
+      <td style="font-family:var(--mono);font-size:11px;color:var(--muted)">${d.mac_address}</td>
+      <td>${d.device_type || '—'}</td>
+      <td>${d.vendor || '—'}</td>
+      <td style="font-family:var(--mono)">${(d.total_requests || 0).toLocaleString()}</td>
+      <td style="font-family:var(--mono);color:var(--danger)">${(d.blocked_requests || 0).toLocaleString()}</td>
+      <td style="font-size:11px;color:var(--muted)">${fmtDate(d.last_seen)}</td>
+      <td>
+        <button class="btn" style="padding:4px 8px;font-size:9px" onclick="renameDevice('${d.mac_address}','${d.device_name || ''}')">✎ Rename</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+async function renameDevice(mac, current) {
+  const name = prompt('Device name:', current);
+  if (name !== null) {
+    await fetch(`/api/devices/${mac}`, {
+      method: 'PUT',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({device_name: name})
+    });
+    loadDevices();
+  }
+}
+
+// ── Logs ──────────────────────────────────────────────────────────────────────
+async function loadLogs() {
+  const hours = document.getElementById('logHours').value;
+  const status = document.getElementById('logStatus').value;
+  const logs = await api(`/api/logs?hours=${hours}&limit=200${status ? '&status=' + status : ''}`);
+  
+  document.getElementById('logCount').textContent = `Showing ${logs.length} entries`;
+  
+  const tbody = document.getElementById('logsBody');
+  tbody.innerHTML = logs.map(l => `<tr>
+    <td style="font-family:var(--mono);font-size:10px;color:var(--muted)">${fmtDate(l.timestamp)}</td>
+    <td style="font-family:var(--mono);font-size:11px;color:var(--info)">${l.device_ip}</td>
+    <td style="font-family:var(--mono);font-size:10px;color:var(--muted)">${l.device_mac || '—'}</td>
+    <td style="font-size:11px">${l.device_name || l.hostname || '—'}</td>
+    <td style="font-family:var(--mono);font-size:11px">${l.domain}</td>
+    <td>${catBadge(l.category)}</td>
+    <td><span class="badge badge-${l.status.toLowerCase()}">${l.status}</span></td>
+  </tr>`).join('');
+}
+
+function exportLogs() {
+  const hours = document.getElementById('logHours')?.value || 24;
+  window.open(`/api/export/csv?hours=${hours}`, '_blank');
+}
+
+// ── Blocklist ─────────────────────────────────────────────────────────────────
+async function loadBlocklist() {
+  const domains = await api('/api/blocked-domains');
+  document.getElementById('blocklistCount').textContent = `${domains.filter(d=>d.active).length} active rules`;
+  
+  document.getElementById('blocklistItems').innerHTML = domains.map(d => `
+    <div class="block-item">
+      <div>
+        <span class="block-domain">${d.domain}</span>
+        <span style="margin-left:12px">${catBadge(d.category)}</span>
+        ${d.reason ? `<span style="font-size:11px;color:var(--muted);margin-left:8px">${d.reason}</span>` : ''}
+      </div>
+      <div class="block-actions">
+        <button class="btn ${d.active ? '' : 'btn-primary'}" 
+                style="padding:4px 10px;font-size:9px" 
+                onclick="toggleDomain(${d.id})">${d.active ? '⏸ Disable' : '▶ Enable'}</button>
+        <button class="btn btn-danger" 
+                style="padding:4px 10px;font-size:9px" 
+                onclick="deleteDomain(${d.id})">✕ Delete</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+async function addBlockedDomain() {
+  const domain = document.getElementById('newDomain').value.trim();
+  const category = document.getElementById('newCategory').value;
+  const reason = document.getElementById('newReason').value.trim();
+  if (!domain) return alert('Enter a domain');
+  
+  const r = await apiPost('/api/blocked-domains', {domain, category, reason});
+  if (r.error) alert(r.error);
+  else {
+    document.getElementById('newDomain').value = '';
+    document.getElementById('newReason').value = '';
+    loadBlocklist();
+  }
+}
+
+async function deleteDomain(id) {
+  if (!confirm('Delete this block rule?')) return;
+  await fetch(`/api/blocked-domains/${id}`, {method: 'DELETE'});
+  loadBlocklist();
+}
+
+async function toggleDomain(id) {
+  await apiPost(`/api/blocked-domains/${id}/toggle`, {});
+  loadBlocklist();
+}
+
+// ── Settings ──────────────────────────────────────────────────────────────────
+async function loadSettings() {
+  const s = await api('/api/settings');
+  Object.entries(s).forEach(([k, v]) => {
+    const el = document.getElementById('s-' + k);
+    if (!el) return;
+    if (el.type === 'checkbox') el.checked = v === '1';
+    else el.value = v;
+  });
+}
+
+async function saveSettings() {
+  const ids = ['alert_telegram','alert_email','telegram_token','telegram_chat_id',
+                'email_smtp','email_port','email_user','email_password','email_to',
+                'dns_interface','log_retention_days','alert_threshold'];
+  const data = {};
+  ids.forEach(id => {
+    const el = document.getElementById('s-' + id);
+    if (el) data[id] = el.type === 'checkbox' ? (el.checked ? '1' : '0') : el.value;
+  });
+  await fetch('/api/settings', {method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(data)});
+}
+
+// ── Simulate Request ──────────────────────────────────────────────────────────
+async function simulateRequest() {
+  const domain = document.getElementById('simDomain').value.trim();
+  const ip = document.getElementById('simIP').value.trim();
+  if (!domain) return;
+  
+  const r = await apiPost('/api/simulate', {domain, device_ip: ip, device_mac: 'FF:FF:FF:FF:FF:FF'});
+  const el = document.getElementById('simResult');
+  const statusColor = r.status === 'BLOCKED' ? 'var(--danger)' : 'var(--accent)';
+  el.innerHTML = `→ <span style="color:${statusColor}">${r.status}</span> &nbsp; 
+                  Domain: <b>${r.domain}</b> &nbsp; 
+                  Category: ${r.category} &nbsp; 
+                  ${r.reason ? `Reason: ${r.reason}` : ''}`;
+}
+
+// ── Polling for live events (replaces WebSocket) ─────────────────────────
+let lastEventId = 0;
+
+async function pollEvents() {
+  try {
+    const events = await api(`/api/recent-events?since_id=${lastEventId}`);
+    if (events.length > 0) {
+      // Update lastEventId to highest id seen
+      const maxId = Math.max(...events.map(e => e.id));
+      if (maxId > lastEventId) lastEventId = maxId;
+      
+      // Add to feed in reverse order (oldest first)
+      const reversed = [...events].reverse();
+      reversed.forEach(e => {
+        if (document.getElementById('page-dashboard').classList.contains('active')) {
+          addFeedItem(e);
+        }
+        // Update blocked count
+        if (e.status === 'BLOCKED') {
+          const bstat = document.getElementById('stat-blocked');
+          if (bstat && bstat.textContent !== '—') {
+            const bcurr = parseInt(bstat.textContent.replace(/,/g, '')) || 0;
+            bstat.textContent = (bcurr + 1).toLocaleString();
+          }
+        }
+      });
+    }
+  } catch(e) { /* ignore polling errors */ }
+}
+
+// Initialize lastEventId from current max
+async function initPoll() {
+  try {
+    const events = await api('/api/recent-events?since_id=0');
+    if (events.length > 0) lastEventId = Math.max(...events.map(e => e.id));
+  } catch(e) {}
+  setInterval(pollEvents, 2000);
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+loadStats();
+loadTimeline();
+loadCategories();
+loadTopDomains();
+initPoll();
+
+// Refresh stats every 30 seconds
+setInterval(() => {
+  if (document.getElementById('page-dashboard').classList.contains('active')) {
+    loadStats();
+    loadTimeline();
+    loadCategories();
+    loadTopDomains();
+  }
+}, 30000);
+</script>
+</body>
+</html>
