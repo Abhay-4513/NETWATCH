@@ -1,1 +1,164 @@
-
+Software Requirement Specification: 
+NetWatch 
+1. Introduction 
+  1.1 Purpose 
+    • This document acts as a blueprint for software development. 
+    • It outlines the functional, non-functional, and behavioral requirements of the NetWatch   
+    system. 
+    • The document captures what the software should do from the user's perspective. 
+  1.2 Scope 
+    • NetWatch is a Python-based DNS-level network monitor and website filtering system. 
+    • It intercepts DNS queries from every device on a Wi-Fi network. 
+    • The system filters blocked domains and logs all activity. 
+    • It displays network data on a real-time web dashboard. 
+  1.3 Definitions, Acronyms, and Abbreviations 
+    • DNS: Domain Name System, the protocol intercepted by the system. 
+    • MAC: Media Access Control, used to identify hardware addresses of devices. 
+    • API: Application Programming Interface, utilized for dashboard communications. 
+    • OUI: Organizationally Unique Identifier, used to find device manufacturers. 
+  1.4 References 
+    • IEEE 830 / ISO/IEC/IEEE 29148 standard structure for SRS formatting. 
+    • NetWatch GitHub Repository Documentation. 
+  1.5 Overview 
+    • The subsequent sections provide a detailed description of the intended purpose, 
+    features, functionality, and constraints of the NetWatch application. 
+2. Overall Description 
+  2.1 Product Perspective 
+    • The product operates as a standalone local server application. 
+    • It acts as the primary DNS server for a local network. 
+  2.2 Product Functions 
+    • The system provides DNS-level filtering to block domains before browser connection. 
+    • It offers a real-time dashboard featuring charts and per-device activity. 
+    • It performs automatic categorization of domains into groups like search, media, adult, 
+    and malware. 
+    • It tracks devices by IP address, MAC address, and vendor info. 
+    • It sends alerts via Telegram and email when blocked access occurs. 
+  2.3 User Classes and Characteristics 
+    • Administrators: Users who manage the local network and have access to the web 
+    dashboard. 
+    • Administrators are responsible for configuring router settings to point the primary DNS 
+    to the NetWatch machine. 
+  2.4 Operating Environment 
+    • The system runs on Windows, Mac, and Linux platforms. 
+    • It requires Python version 3.8 or higher. 
+    • It utilizes Flask version 3.0 or higher for the web interface. 
+    • It relies on an SQLite database for data storage. 
+  2.5 Design and Implementation Constraints 
+    • The DNS server requires Administrator or root privileges to bind to port 53. 
+    • The system should not be deployed on networks not owned or administered by the 
+    user. 
+    • Monitoring users without their knowledge may violate privacy laws depending on the 
+    jurisdiction. 
+  2.6 User Documentation 
+    • The project provides a README.md file that includes local installation instructions and 
+    troubleshooting steps. 
+  2.7 Assumptions and Dependencies 
+    • The system assumes the administrator has access to the router's admin panel to modify 
+    DHCP or LAN configuration. 
+    • Email alerts depend on the user enabling 2-Factor Authentication and generating an 
+    App Password in their Google account. 
+3. Functional Requirements 
+  3.1 System Features 
+    • Feature 1: DNS Resolution and Filtering - The system receives DNS queries and checks if 
+    the domain is blocked. Subdomain matching is automatic. If blocked, it returns an empty 
+    reply; if allowed, it forwards the request to 8.8.8.8. 
+    • Feature 2: Alert Dispatching - The system sends notifications regarding blocked access 
+    attempts. Alerts fire on the first blocked attempt and every fifth attempt per device
+    domain pair to prevent flooding.   
+    • Feature 3: Simulation Mode - The system allows testing without root access. Users can 
+    inject a fake DNS event via a REST API endpoint to test the dashboard. 
+4. External Interface Requirements 
+  4.1 User Interfaces 
+    • The user interface is a real-time web dashboard hosted at http://localhost:5000. 
+    • It is designed as a single-page application. 
+    • Available pages include Overview, Access Logs, Devices, Blocked Domains, Top 
+    Domains, Categories, Live Feed, and Settings. 
+  4.2 Software Interfaces 
+    • The system interfaces with an SQLite database file named netwatch.db. 
+    • It utilizes external APIs to send messages via Telegram. 
+    • It communicates with Gmail SMTP servers to dispatch email alerts. 
+  4.3 Communication Interfaces 
+    • The system receives network traffic via the DNS protocol on port 53. 
+    • It exposes a REST API using HTTP methods such as GET, POST, PUT, and DELETE. 
+5. Non-Functional Requirements 
+  5.1 Performance Requirements 
+    • The system must log DNS response times in milliseconds. 
+  5.2 Security Requirements 
+    • All data is stored locally. 
+    • No data is sent to third parties. 
+    • The Settings API endpoint masks current passwords. 
+  5.3 Reliability Requirements 
+    • The system utilizes alert rate-limiting to prevent notification flooding. 
+  5.4 Maintainability 
+    • The project is structured with modular utility files, including database.py, dns_server.py, 
+    and alert_manager.py. 
+  5.5 Portability 
+    • The software runs across different operating systems, including Windows, Mac, and 
+    Linux. 
+6. System Models 
+  6.1 Data Flow Diagrams (DFD) 
+    • A device makes a request which is sent as a DNS query to NetWatch on port 53. 
+    • The NetWatchResolver receives the query via the dnslib library. 
+    • The database checks for an exact match or subdomain match. 
+    • The query is either blocked and returned empty, or allowed and forwarded to an 
+    external resolver. 
+    • The event is then logged to the database and an alert is optionally sent. 
+7. Data Requirements 
+  7.1 Data Description 
+    • The system records domain names only. 
+    • It does not record URLs, page content, or passwords. 
+    • It does not perform any physical location tracking. 
+  7.2 Database Requirements 
+    • The schema includes an access_logs table containing columns for ID, device IP, device 
+    MAC, domain, category, status, timestamp, and response time. 
+    • The schema includes a devices table containing unique MAC addresses, IP addresses, 
+    hostnames, assigned labels, device types, vendors, and timestamps. 
+    • The schema includes a blocked_domains table containing unique domains, categories, 
+    reasons, active status integers, and timestamps. 
+8. Quality Attributes 
+  • Privacy: The system ensures data privacy by keeping all logged information on the local 
+  machine. 
+  • Testability: The software features a simulation mode and a specific /api/simulate API 
+  endpoint to inject fake events for easy testing. 
+9. Constraints and Risks Technical Constraints 
+  • The built-in DNS server requires Administrator or root privileges to successfully bind to 
+  port 53. 
+  • On Windows platforms, MAC addresses may display as unknown because 
+  /proc/net/arp does not exist, which requires the system to track devices by their IP 
+  addresses instead. 
+10. Project Risks 
+  • Conflicts may arise if another DNS service is already running and occupying port 53. 
+  • Port 5000 may already be in use by another application, requiring the administrator to 
+  change the Flask port. 
+  Security and Compliance Risks 
+  • The system must not be deployed on networks that the administrator does not own or 
+  have permission to administer. 
+  • Monitoring network users without their explicit knowledge may violate privacy laws 
+  depending on the local jurisdiction. 
+  10. Acceptance Criteria 
+  Conditions for Acceptance 
+  • The application must successfully host a real-time web dashboard accessible at 
+  http://localhost:5000. 
+  • The system must successfully intercept DNS queries, blocking listed domains (and their 
+  subdomains) by returning an empty reply, while forwarding allowed queries to 8.8.8.8. 
+  • The system must generate an SQLite database file (netwatch.db) automatically upon the 
+  first run. 
+  • Alerts (via Telegram or Email) must trigger precisely on the first blocked attempt and 
+  on every fifth attempt thereafter for each specific device-domain pair. 
+  Validation and Verification Measures 
+  • Administrators can verify functionality by using the /api/simulate REST endpoint to 
+  inject fake DNS events and confirm they appear on the dashboard. 
+  • The system's UI and API endpoints can be validated without root access by running the 
+  application in Demo Mode, which utilizes a background traffic simulator thread. 
+11. Appendices 
+  Glossary and Definitions 
+  • dnslib: A required Python library used by the system to receive and parse DNS queries 
+  on port 53. 
+  • Scapy: An optional Python dependency utilized specifically for the passive network 
+  sniffing mode. 
+  • SQLite: The lightweight database engine used to store access logs, device information, 
+  and blocked domains within a single file. 
+  • Demo Mode: A state where the application runs without Administrator rights by 
+  bypassing the local DNS server and starting a traffic simulation thread instead. 
+  • OUI (Organizationally Unique Identifier): The portion of a MAC address used by the 
+  system's device_tracker.py utility to identify the device manufacturer/vendor. 
