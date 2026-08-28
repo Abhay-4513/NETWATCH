@@ -371,6 +371,14 @@ Log to database + optionally send alert
 
 ---
 
+An important thing this porject was created by me just to check my AI tool skills.
+So this is fully generated with the help of #claude code .
+This repo doesn't represent any python skills i have , but it represent how i have implemented this project .
+During this i have gained some skills like so though it was created by the AI but still i managed to gain some skills.
+
+And one more thing that any file which are in the DOCUMENTATION folder are made by me..
+And every other REPO is the work of my own .
+
 ## 📄 License
 
 MIT License — see [LICENSE](LICENSE) for details.
