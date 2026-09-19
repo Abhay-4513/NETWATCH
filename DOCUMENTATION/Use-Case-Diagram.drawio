@@ -1,0 +1,136 @@
+<mxfile host="app.diagrams.net" agent="ChatGPT">
+  <diagram id="netwatch-usecase" name="NetWatch System">
+    <mxGraphModel dx="1873" dy="1280" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1400" pageHeight="1000" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="system" parent="1" style="shape=rectangle;whiteSpace=wrap;html=1;strokeWidth=1;fontSize=16;" value="" vertex="1">
+          <mxGeometry height="830" width="940" x="200" y="60" as="geometry" />
+        </mxCell>
+        <mxCell id="system_title" parent="1" style="shape=rectangle;whiteSpace=wrap;html=1;fontSize=16;fontStyle=1;align=center;verticalAlign=middle;" value="NetWatch System" vertex="1">
+          <mxGeometry height="32" width="940" x="200" y="60" as="geometry" />
+        </mxCell>
+        <mxCell id="network_device" parent="1" style="shape=umlActor;html=1;whiteSpace=wrap;verticalAlign=middle;align=center;fontSize=13;" value="Network&lt;br&gt;Device" vertex="1">
+          <mxGeometry height="95" width="100" x="35" y="115" as="geometry" />
+        </mxCell>
+        <mxCell id="administrator" parent="1" style="shape=umlActor;html=1;whiteSpace=wrap;verticalAlign=middle;align=center;fontSize=13;" value="Administrator" vertex="1">
+          <mxGeometry height="110" width="100" x="35" y="510" as="geometry" />
+        </mxCell>
+        <mxCell id="telegram" parent="1" style="shape=umlActor;html=1;whiteSpace=wrap;verticalAlign=middle;align=center;fontSize=13;" value="Telegram API" vertex="1">
+          <mxGeometry height="105" width="105" x="1165" y="80" as="geometry" />
+        </mxCell>
+        <mxCell id="email" parent="1" style="shape=umlActor;html=1;whiteSpace=wrap;verticalAlign=middle;align=center;fontSize=13;" value="Email Server" vertex="1">
+          <mxGeometry height="105" width="105" x="1165" y="265" as="geometry" />
+        </mxCell>
+        <mxCell id="resolver" parent="1" style="shape=umlActor;html=1;whiteSpace=wrap;verticalAlign=middle;align=center;fontSize=13;" value="External Resolver&lt;br&gt;(e.g., 8.8.8.8)" vertex="1">
+          <mxGeometry height="115" width="115" x="1160" y="465" as="geometry" />
+        </mxCell>
+        <mxCell id="uc_dns" parent="1" style="ellipse;whiteSpace=wrap;html=1;strokeWidth=1.5;fontSize=13;align=center;verticalAlign=middle;" value="Send DNS Query&lt;br&gt;&lt;font style=&#39;font-size:11px&#39;&gt;Devices managing requests&lt;br&gt;section 1.2, 2.1, 6.2&lt;/font&gt;" vertex="1">
+          <mxGeometry height="80" width="230" x="325" y="140" as="geometry" />
+        </mxCell>
+        <mxCell id="uc_settings" parent="1" style="ellipse;whiteSpace=wrap;html=1;strokeWidth=1.5;fontSize=13;align=center;verticalAlign=middle;" value="Manage Local Network Settings&lt;br&gt;&lt;font style=&#39;font-size:11px&#39;&gt;Configures router to point DNS to NetWatch&lt;br&gt;section 2.3&lt;/font&gt;" vertex="1">
+          <mxGeometry height="80" width="300" x="230" y="285" as="geometry" />
+        </mxCell>
+        <mxCell id="uc_dashboard" parent="1" style="ellipse;whiteSpace=wrap;html=1;strokeWidth=1.5;fontSize=13;align=center;verticalAlign=middle;" value="Access Web Dashboard&lt;br&gt;&lt;font style=&#39;font-size:11px&#39;&gt;Hosts http://localhost:5000&lt;br&gt;sections 2.3, 4.1&lt;/font&gt;" vertex="1">
+          <mxGeometry height="75" width="235" x="245" y="405" as="geometry" />
+        </mxCell>
+        <mxCell id="uc_domains" parent="1" style="ellipse;whiteSpace=wrap;html=1;strokeWidth=1.5;fontSize=13;align=center;verticalAlign=middle;" value="Configure Blocked Domains&lt;br&gt;&lt;font style=&#39;font-size:11px&#39;&gt;categorize and manage list&lt;br&gt;sections 2.2, 3.1 Feature 1&lt;/font&gt;" vertex="1">
+          <mxGeometry height="80" width="255" x="245" y="505" as="geometry" />
+        </mxCell>
+        <mxCell id="uc_logs" parent="1" style="ellipse;whiteSpace=wrap;html=1;strokeWidth=1.5;fontSize=13;align=center;verticalAlign=middle;" value="View Access Logs&lt;br&gt;&lt;font style=&#39;font-size:11px&#39;&gt;sections 4.1, 7.2&lt;/font&gt;" vertex="1">
+          <mxGeometry height="70" width="195" x="275" y="610" as="geometry" />
+        </mxCell>
+        <mxCell id="uc_devices" parent="1" style="ellipse;whiteSpace=wrap;html=1;strokeWidth=1.5;fontSize=13;align=center;verticalAlign=middle;" value="Manage Devices&lt;br&gt;&lt;font style=&#39;font-size:11px&#39;&gt;per-device activity and information&lt;br&gt;sections 2.2, 4.1, 7.2&lt;/font&gt;" vertex="1">
+          <mxGeometry height="80" width="255" x="245" y="705" as="geometry" />
+        </mxCell>
+        <mxCell id="uc_sim" parent="1" style="ellipse;whiteSpace=wrap;html=1;strokeWidth=1.5;fontSize=13;align=center;verticalAlign=middle;" value="Test with Simulation Mode&lt;br&gt;&lt;font style=&#39;font-size:11px&#39;&gt;sections 3.1 Feature 3, 10&lt;/font&gt;" vertex="1">
+          <mxGeometry height="75" width="255" x="245" y="805" as="geometry" />
+        </mxCell>
+        <mxCell id="uc_resolve" parent="1" style="ellipse;whiteSpace=wrap;html=1;strokeWidth=1.5;fontSize=13;align=center;verticalAlign=middle;" value="Perform DNS Resolution&lt;br&gt;&lt;font style=&#39;font-size:11px&#39;&gt;and Filtering&lt;br&gt;section 2.2, 3.1 Feature 1, 6.2&lt;/font&gt;" vertex="1">
+          <mxGeometry height="95" width="270" x="580" y="370" as="geometry" />
+        </mxCell>
+        <mxCell id="uc_dispatch" parent="1" style="ellipse;whiteSpace=wrap;html=1;strokeWidth=1.5;fontSize=13;align=center;verticalAlign=middle;" value="Dispatch Alerts&lt;br&gt;&lt;font style=&#39;font-size:11px&#39;&gt;Sends Telegram/email notifications&lt;br&gt;for blocked access&lt;br&gt;section 2.2, 3.1 Feature 2, 4.2&lt;/font&gt;" vertex="1">
+          <mxGeometry height="105" width="290" x="805" y="175" as="geometry" />
+        </mxCell>
+        <mxCell id="uc_status" parent="1" style="ellipse;whiteSpace=wrap;html=1;strokeWidth=1.5;fontSize=13;align=center;verticalAlign=middle;" value="Check Blocked Domain Status&lt;br&gt;&lt;font style=&#39;font-size:11px&#39;&gt;using database, 6.2&lt;/font&gt;" vertex="1">
+          <mxGeometry height="75" width="255" x="780" y="565" as="geometry" />
+        </mxCell>
+        <mxCell id="uc_log" parent="1" style="ellipse;whiteSpace=wrap;html=1;strokeWidth=1.5;fontSize=13;align=center;verticalAlign=middle;" value="Log Activity&lt;br&gt;&lt;font style=&#39;font-size:11px&#39;&gt;to database&lt;br&gt;sections 1.2, 6.2, 7.2&lt;/font&gt;" vertex="1">
+          <mxGeometry height="75" width="205" x="615" y="710" as="geometry" />
+        </mxCell>
+        <mxCell id="e1" edge="1" parent="1" source="network_device" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;endFill=1;fontSize=12;" target="uc_dns">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e8" edge="1" parent="1" source="telegram" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;endFill=1;fontSize=12;" target="uc_dispatch">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e9" edge="1" parent="1" source="email" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;endFill=1;fontSize=12;" target="uc_dispatch">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e10" edge="1" parent="1" source="resolver" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;endFill=1;fontSize=12;" target="uc_resolve">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e11" edge="1" parent="1" source="uc_dns" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;endFill=1;fontSize=12;" target="uc_resolve">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e12" edge="1" parent="1" source="uc_resolve" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;endFill=1;fontSize=12;" target="uc_dispatch">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e13" edge="1" parent="1" source="uc_resolve" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;endFill=1;fontSize=12;" target="uc_status">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e14" edge="1" parent="1" source="uc_resolve" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=classic;endFill=1;fontSize=12;" target="uc_log">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e15" edge="1" parent="1" source="uc_resolve" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;endArrow=none;endFill=0;fontSize=12;" target="uc_dispatch">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e16" edge="1" parent="1" source="uc_resolve" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;endArrow=none;endFill=0;fontSize=12;" target="uc_status">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e17" edge="1" parent="1" source="uc_resolve" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;endArrow=none;endFill=0;fontSize=12;" target="uc_log">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e18" edge="1" parent="1" source="uc_resolve" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;dashed=1;endArrow=none;endFill=0;fontSize=12;" target="resolver">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="wVfOl5hWdKSkvCc6Vf6Q-2" edge="1" parent="1" style="endArrow=classic;html=1;rounded=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" target="uc_settings" value="">
+          <mxGeometry height="50" relative="1" width="50" as="geometry">
+            <mxPoint x="120" y="490" as="sourcePoint" />
+            <mxPoint x="170" y="440" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="wVfOl5hWdKSkvCc6Vf6Q-3" edge="1" parent="1" style="endArrow=classic;html=1;rounded=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" target="uc_dashboard" value="">
+          <mxGeometry height="50" relative="1" width="50" as="geometry">
+            <mxPoint x="140" y="520" as="sourcePoint" />
+            <mxPoint x="190" y="470" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="wVfOl5hWdKSkvCc6Vf6Q-4" edge="1" parent="1" style="endArrow=classic;html=1;rounded=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" target="uc_domains" value="">
+          <mxGeometry height="50" relative="1" width="50" as="geometry">
+            <mxPoint x="160" y="560" as="sourcePoint" />
+            <mxPoint x="210" y="510" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="wVfOl5hWdKSkvCc6Vf6Q-5" edge="1" parent="1" style="endArrow=classic;html=1;rounded=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" target="uc_logs" value="">
+          <mxGeometry height="50" relative="1" width="50" as="geometry">
+            <mxPoint x="160" y="610" as="sourcePoint" />
+            <mxPoint x="210" y="560" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="wVfOl5hWdKSkvCc6Vf6Q-6" edge="1" parent="1" style="endArrow=classic;html=1;rounded=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" target="uc_devices" value="">
+          <mxGeometry height="50" relative="1" width="50" as="geometry">
+            <mxPoint x="130" y="650" as="sourcePoint" />
+            <mxPoint x="180" y="600" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="wVfOl5hWdKSkvCc6Vf6Q-7" edge="1" parent="1" style="endArrow=classic;html=1;rounded=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" target="uc_sim" value="">
+          <mxGeometry height="50" relative="1" width="50" as="geometry">
+            <mxPoint x="90" y="670" as="sourcePoint" />
+            <mxPoint x="140" y="620" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
